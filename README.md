@@ -1,6 +1,8 @@
 # 📚 Kindleizer - Espresso Edition ☕️
 
-![Kindleizer App](app_icon.png)
+<p align="center">
+  <img src="app_icon.png" alt="Kindleizer App Icon" width="200" style="border-radius: 40px; box-shadow: 0 10px 20px rgba(0,0,0,0.2);" />
+</p>
 
 **Kindleizer** is a sleek, fast, and completely free PDF-to-Kindle conversion tool designed exclusively for macOS. Instead of wrestling with bulky, complex software, Kindleizer perfectly formats your PDFs for your e-reader with a single click.
 
