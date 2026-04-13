@@ -16,7 +16,7 @@ With its e-ink texture and custom "Espresso" theme, it feels like a natural exte
 
 ## 📥 Installation & Download
 
-[👉 Download Kindleizer v1.0 DMG](https://github.com/hundebach/kindleizer/releases/latest)
+👉[Download Kindleizer v1.0 DMG](https://github.com/hundebach/kindleizer/releases/latest)
 
 1. Download the `.dmg` file from the link above and double-click to open it.
 2. Drag the **Kindleizer** icon into your **Applications** folder.
