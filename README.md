@@ -22,10 +22,19 @@ With its e-ink texture and custom "Espresso" theme, it feels like a natural exte
 2. Drag the **Kindleizer** icon into your **Applications** folder.
 
 **⚠️ Important macOS Security Note:**
-Since this is an indie app not signed with an expensive Apple Developer certificate, macOS will show a security warning (Gatekeeper) on the first launch. To bypass this:
+Since this is an indie app not signed with an expensive Apple Developer certificate, macOS will show a security warning (Gatekeeper) on the first launch. Don't worry, it's safe! 
+To bypass this:
 * Go to your **Applications** folder.
 * **Right-click (or Control-click)** on Kindleizer and select **"Open"**.
 * Click **"Open"** again in the prompt. macOS will now remember it as safe, and you can open it normally next time!
+
+### 2. If it says "App is Damaged" or "Cannot be Opened" (The Quarantine Fix)
+If you already tried to open it and macOS moved it to "quarantine" or says it's damaged, follow these steps to reset it:
+1. Open your **Terminal** (Cmd + Space, type 'Terminal').
+2. Copy and paste the following command:
+   ```bash
+   xattr -cr /Applications/Kindleizer.app
+3. Press Enter. Now try opening the app normally—it will work perfectly!
 
 ## 🤝 Support (Buy Me a Coffee)
 
