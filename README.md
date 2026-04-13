@@ -29,7 +29,7 @@ Since this is an indie app not signed with an expensive Apple Developer certific
 
 ## 🤝 Support (Buy Me a Coffee)
 
-I developed this tool completely for free to speed up my own PDF reading workflow. If it makes your life easier and you enjoy the "Espresso Edition" vibe, consider buying me my next coffee!
+I developed this tool completely for free to speed up my own PDF reading workflow. If it makes your life easier and you enjoy the "Espresso Edition" vibe, consider buying me my next coffee and thank you so much for your support!
 
 [<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="200" alt="Buy Me A Coffee">](INSERT_YOUR_BUY_ME_A_COFFEE_OR_GUMROAD_LINK_HERE)
 
