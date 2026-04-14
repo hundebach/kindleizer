@@ -47,8 +47,9 @@ If you already tried to open it and macOS moved it to "quarantine" or says it's 
 
 I developed this tool completely for free to speed up my own PDF reading workflow. If it makes your life easier and you enjoy the "Espresso Edition" vibe, consider buying me my next coffee and thank you so much for your support!
 
-[<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="200" alt="Buy Me A Coffee">](INSERT_YOUR_BUY_ME_A_COFFEE_OR_GUMROAD_LINK_HERE)
-
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/hundebach)
+---
+*Developed with passion in Padua, Italy. Every espresso counts! ☕️*
 ---
 
 ## 📜 Credits & Acknowledgments
