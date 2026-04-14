@@ -50,11 +50,9 @@ I developed this tool completely for free to speed up my own PDF reading workflo
 [<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="200" alt="Buy Me A Coffee">](INSERT_YOUR_BUY_ME_A_COFFEE_OR_GUMROAD_LINK_HERE)
 
 ---
-*Developed with passion by a gastronomy and tech enthusiast in Padua, Italy. 🇮🇹*
 
 ## 📜 Credits & Acknowledgments
 
 Kindleizer is a graphical wrapper built with Python. The heavy lifting of PDF optimization is performed by the legendary **K2pdfopt engine**.
 
-* **Core Engine:** Huge thanks to **Willus** for creating [K2pdfopt](https://www.willus.com/k2pdfopt/), the most powerful open-source PDF optimizer.
-* **Design & Wrapper:** Developed by [Hundebach](https://github.com/hundebach) to provide a seamless macOS experience.
+* **Core Engine:** Huge thanks to [Willus](https://www.willus.com) for creating [K2pdfopt](https://www.willus.com/k2pdfopt/), the most powerful open-source PDF optimizer.
