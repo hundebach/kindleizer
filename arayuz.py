@@ -310,7 +310,7 @@ class KindleizerApp:
         self.root.geometry(f"{final_w}x{final_h}")
         self.root.bind("<FocusIn>", self.on_focus_regained)
 
-def on_focus_regained(self, event):
+    def on_focus_regained(self, event):
         # Uygulama aktifleştiğinde arayüzü zorla günceller ve tıklama donmasını çözer
         self.root.update_idletasks()
         if self.os_name == "Darwin": # Eğer sistem Mac ise
