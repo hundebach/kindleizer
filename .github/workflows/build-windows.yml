@@ -28,7 +28,7 @@ jobs:
         
     - name: Build EXE
       run: |
-        pyinstaller --noconfirm --onedir --windowed --add-data "k2pdfopt.exe;." --icon "icon.ico" --name "Kindleizer" arayuz.py
+        pyinstaller --noconfirm --onefile --windowed --collect-all PyQt6 --add-data "k2pdfopt.exe;." --icon "icon.ico" --name "Kindleizer" arayuz.py
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
