@@ -26,7 +26,7 @@ PROGRESS_BG = "#D4C4A9"
 PROGRESS_FILL = "#30281F"
 PAUSE_COLOR = "#E6A817"
 
-MAIN_FONT = "Bookerly"
+MAIN_FONT = "Georgia"
 FONT_TITLE = (MAIN_FONT, 22, "bold")
 FONT_HEADER = (MAIN_FONT, 18, "bold")
 FONT_OPTION = (MAIN_FONT, 16)
@@ -221,14 +221,14 @@ class KindleizerApp:
 
         self.langs = {
             'tr': {
-                'title': 'Kindleizer v1.0', 'name': '🇹🇷 Türkçe',
+                'title': 'Kindleizer v1.0', 'name': 'Türkçe',
                 'drop': 'PDF Dosyasını Buraya Sürükleyin', 'drop_btn': 'Gözat',
-                'model': 'Kindle Modeli:', 'color': '🎨 Renkleri Koru (Colorsoft vb. için)',
+                'model': 'Kindle Modeli:', 'color': 'Renkleri Koru (Colorsoft vb. için)',
                 'zoom': 'Yazı Büyütme:', 'wrap': 'Sayfa Düzeni:', 'out': 'Kayıt Konumu:',
                 'after': 'İşlem Bitince:', 'start': 'DÖNÜŞTÜRMEYİ BAŞLAT', 'cancel': 'İptal Et',
                 'pause': 'Duraklat', 'resume': 'Devam Et',
-                'ready': 'Hazır.', 'rem': 'Kalan:', 'elapsed': 'Geçen:', 'done': '✅ DÖNÜŞÜM TAMAMLANDI!',
-                'cancelled': '❌ İptal Edildi.', 'paused': '⏸️ Duraklatıldı',
+                'ready': 'Hazır.', 'rem': 'Kalan:', 'elapsed': 'Geçen:', 'done': 'DÖNÜŞÜM TAMAMLANDI!',
+                'cancelled': 'İptal Edildi.', 'paused': 'Duraklatıldı',
                 'warn': 'Lütfen bir PDF seçin!', 'clear': 'Kaldır',
                 'ow_title': 'Dosya Zaten Var', 'ow_msg': 'Üzerine yazılsın mı?',
                 'preparing': 'Dönüşüm başlatılıyor, lütfen bekleyin...',
@@ -252,14 +252,14 @@ class KindleizerApp:
                 'a_opts': ["Klasörde Göster", "Dosyayı Aç", "Hiçbir Şey Yapma"]
             },
             'en': {
-                'title': 'Kindleizer v1.0', 'name': '🇺🇸 English',
+                'title': 'Kindleizer v1.0', 'name': 'English',
                 'drop': 'Drag & Drop PDF Here', 'drop_btn': 'Browse',
-                'model': 'Kindle Model:', 'color': '🎨 Preserve Colors (for Colorsoft etc.)',
+                'model': 'Kindle Model:', 'color': 'Preserve Colors (for Colorsoft etc.)',
                 'zoom': 'Text Zoom:', 'wrap': 'Page Layout:', 'out': 'Save Location:',
                 'after': 'After Process:', 'start': 'START CONVERSION', 'cancel': 'Cancel',
                 'pause': 'Pause', 'resume': 'Resume',
-                'ready': 'Ready.', 'rem': 'Rem:', 'elapsed': 'Elapsed:', 'done': '✅ CONVERSION COMPLETE!',
-                'cancelled': '❌ Cancelled.', 'paused': '⏸️ Paused',
+                'ready': 'Ready.', 'rem': 'Rem:', 'elapsed': 'Elapsed:', 'done': 'CONVERSION COMPLETE!',
+                'cancelled': 'Cancelled.', 'paused': 'Paused',
                 'warn': 'Please select a PDF!', 'clear': 'Remove',
                 'ow_title': 'File Exists', 'ow_msg': 'Overwrite it?',
                 'preparing': 'Starting conversion, please wait...',
@@ -672,7 +672,7 @@ class KindleizerApp:
         self.drawer = ctk.CTkFrame(self.screen_frame, fg_color=INPUT_BG, border_color=BORDER_COLOR, border_width=1, corner_radius=8)
         for code, data in self.langs.items():
             ctk.CTkButton(self.drawer, text=data['name'], font=FONT_OPTION, fg_color="transparent", text_color=INK_COLOR, hover_color=SCREEN_COLOR, height=35, command=lambda c=code: self.change_lang(c)).pack(fill="x", padx=5, pady=2)
-        self.btn_lang = ctk.CTkLabel(self.bottom_frame, text=f"🌐 {self.langs[self.current_lang]['name']}", font=FONT_SMALL, cursor="hand2", text_color=INK_COLOR)
+        self.btn_lang = ctk.CTkLabel(self.bottom_frame, text=f"{self.langs[self.current_lang]['name']}", font=FONT_SMALL, cursor="hand2", text_color=INK_COLOR)
         self.btn_lang.pack(side="right")
         self.btn_lang.bind("<Button-1>", lambda e: self.toggle_drawer())
 
