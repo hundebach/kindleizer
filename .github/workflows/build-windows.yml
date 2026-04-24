@@ -33,5 +33,5 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Kindleizer-Windows
-        path: dist/Kindleizer/
+        name: Kindleizer-Windows-EXE
+        path: dist/Kindleizer.exe
