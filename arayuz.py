@@ -9,6 +9,7 @@ import re
 import time
 import locale
 import signal
+import platform # YENİ: Windows/Mac ayrımı için eklendi
 
 # --- TASARIM VE RENK PALETİ ---
 BEZEL_COLOR = "#111111"
@@ -114,27 +115,30 @@ class KindleDropdown(ctk.CTkFrame):
         self._bind_id = self.root_window.bind("<Button-1>", self._on_global_click, add="+")
 
     def _on_global_click(self, event):
-        if not self.menu_frame:
+        if not self.menu_frame or not self.menu_frame.winfo_exists():
             return
 
-        x, y = self.root_window.winfo_pointerxy()
-        widget = self.root_window.winfo_containing(x, y)
+        try:
+            x, y = self.root_window.winfo_pointerxy()
+            widget = self.root_window.winfo_containing(x, y)
 
-        menu_x1 = self.menu_frame.winfo_rootx()
-        menu_y1 = self.menu_frame.winfo_rooty()
-        menu_x2 = menu_x1 + self.menu_frame.winfo_width()
-        menu_y2 = menu_y1 + self.menu_frame.winfo_height()
+            menu_x1 = self.menu_frame.winfo_rootx()
+            menu_y1 = self.menu_frame.winfo_rooty()
+            menu_x2 = menu_x1 + self.menu_frame.winfo_width()
+            menu_y2 = menu_y1 + self.menu_frame.winfo_height()
 
-        in_menu_area = (menu_x1 <= x <= menu_x2) and (menu_y1 <= y <= menu_y2)
+            in_menu_area = (menu_x1 <= x <= menu_x2) and (menu_y1 <= y <= menu_y2)
 
-        if widget in (self.btn, self.arrow, self, self.menu_frame):
-            return
-        if widget and widget.winfo_toplevel() == self.menu_frame:
-            return
-        if in_menu_area:
-            return
+            if widget in (self.btn, self.arrow, self, self.menu_frame):
+                return
+            if widget and widget.winfo_toplevel() == self.menu_frame:
+                return
+            if in_menu_area:
+                return
 
-        self.close()
+            self.close()
+        except Exception:
+            pass
 
     def close(self):
         if self.menu_frame:
@@ -171,15 +175,19 @@ class KindleDropdown(ctk.CTkFrame):
         self.arrow.configure(state=state)
         if not enabled:
             self.close()
+
 # ====================================================================
 
 class KindleizerApp:
     def __init__(self, root):
         self.root = root
         self.root.overrideredirect(False)
-        self.root.title("Kindleizer v1.0") # UYGULAMA İÇİ İSİM GÜNCELLENDİ
+        self.root.title("Kindleizer v1.0")
         self.root.configure(bg=BEZEL_COLOR)
         ctk.set_appearance_mode("light")
+
+        # --- İŞLETİM SİSTEMİ KONTROLÜ ---
+        self.os_name = platform.system()
 
         self.pdf_path = ""
         self.output_path = ""
@@ -202,13 +210,15 @@ class KindleizerApp:
         else:
             self.base_path = os.path.dirname(os.path.abspath(__file__))
 
-        self.k2_path = os.path.join(self.base_path, "k2pdfopt")
+        # YENİ: K2pdfopt isim ve yol ayarlaması (Windows vs Mac)
+        self.k2_name = "k2pdfopt.exe" if self.os_name == "Windows" else "k2pdfopt"
+        self.k2_path = os.path.join(self.base_path, self.k2_name)
+        
         if not os.path.exists(self.k2_path):
-            self.k2_path = os.path.join(os.path.dirname(sys.executable), "k2pdfopt")
+            self.k2_path = os.path.join(os.path.dirname(sys.executable), self.k2_name)
         if not os.path.exists(self.k2_path):
-            self.k2_path = "/usr/local/bin/k2pdfopt"
+            self.k2_path = self.k2_name # Son çare sistem PATH
 
-        # UYGULAMA İÇİ BAŞLIKLAR GÜNCELLENDİ
         self.langs = {
             'tr': {
                 'title': 'Kindleizer v1.0', 'name': '🇹🇷 Türkçe',
@@ -236,8 +246,8 @@ class KindleizerApp:
                     "1.45 - Maksimum (Büyük yazılar)"
                 ],
                 'w_opts': [
-                    "Serbest Akış - Metin yeniden düzenlenir, hızlı",
-                    "Düzeni Koru - Sayfa yapısı korunur, daha yavaş"
+                    "Serbest Akış - Sadece metinler içindir (hızlı)",
+                    "Düzeni Koru - Makale ve Görselli kitaplar içindir"
                 ],
                 'a_opts': ["Klasörde Göster", "Dosyayı Aç", "Hiçbir Şey Yapma"]
             },
@@ -267,95 +277,10 @@ class KindleizerApp:
                     "1.45 - Maximum (Large text)"
                 ],
                 'w_opts': [
-                    "Reflow - Text reflows, fast",
-                    "Preserve Layout - Keep page structure, slower"
+                    "Reflow - For text only (fast)",
+                    "Preserve Layout - For articles and books with illustrations"
                 ],
                 'a_opts': ["Show in Folder", "Open File", "Do Nothing"]
-            },
-            'it': {
-                'title': 'Kindleizer v1.0', 'name': '🇮🇹 Italiano',
-                'drop': 'Trascina qui il PDF', 'drop_btn': 'Sfoglia',
-                'model': 'Modello Kindle:', 'color': '🎨 Mantieni Colori',
-                'zoom': 'Zoom Testo:', 'wrap': 'Layout Pagina:', 'out': 'Salva in:',
-                'after': 'Dopo il processo:', 'start': 'AVVIA CONVERSIONE', 'cancel': 'Annulla',
-                'pause': 'Pausa', 'resume': 'Riprendi',
-                'ready': 'Pronto.', 'rem': 'Rim:', 'elapsed': 'Trascorso:', 'done': '✅ CONVERSIONE COMPLETATA!',
-                'cancelled': '❌ Annullato.', 'paused': '⏸️ In pausa',
-                'warn': 'Seleziona un PDF!', 'clear': 'Rimuovi',
-                'ow_title': 'File esiste', 'ow_msg': 'Sovrascriverlo?',
-                'preparing': 'Avvio conversione, attendere...',
-                'm_opts': ["6\" Standard", "6.8\" Paperwhite 2021", "7\" Wide", "10.2\" Scribe", "Legacy"],
-                'z_opts': ["1.00 - Originale", "1.15 - Medio", "1.30 - Alto (Cons.)", "1.45 - Massimo"],
-                'w_opts': ["Riflusso (Veloce)", "Mantieni Layout (Ricco)"],
-                'a_opts': ["Mostra nella cartella", "Apri file", "Nessuna azione"]
-            },
-            'es': {
-                'title': 'Kindleizer v1.0', 'name': '🇪🇸 Español',
-                'drop': 'Arrastra aquí el PDF', 'drop_btn': 'Examinar',
-                'model': 'Modelo Kindle:', 'color': '🎨 Mantener Colores',
-                'zoom': 'Tamaño de texto:', 'wrap': 'Diseño de página:', 'out': 'Guardar en:',
-                'after': 'Después del proceso:', 'start': 'INICIAR CONVERSIÓN', 'cancel': 'Cancelar',
-                'pause': 'Pausa', 'resume': 'Reanudar',
-                'ready': 'Listo.', 'rem': 'Restante:', 'elapsed': 'Transcurrido:', 'done': '✅ ¡CONVERSIÓN COMPLETADA!',
-                'cancelled': '❌ Cancelado.', 'paused': '⏸️ En pausa',
-                'warn': '¡Selecciona un PDF!', 'clear': 'Quitar',
-                'ow_title': 'El archivo existe', 'ow_msg': '¿Sobrescribirlo?',
-                'preparing': 'Iniciando conversión, espere...',
-                'm_opts': ["6\" Estándar", "6.8\" Paperwhite 2021", "7\" Ancho", "10.2\" Scribe", "Legacy"],
-                'z_opts': ["1.00 - Original", "1.15 - Medio", "1.30 - Alto (Rec.)", "1.45 - Máximo"],
-                'w_opts': ["Reflujo (Rápido)", "Preservar diseño (Rico)"],
-                'a_opts': ["Mostrar en carpeta", "Abrir archivo", "No hacer nada"]
-            },
-            'pt': {
-                'title': 'Kindleizer v1.0', 'name': '🇧🇷 Português',
-                'drop': 'Arraste e solte o PDF aqui', 'drop_btn': 'Procurar',
-                'model': 'Modelo Kindle:', 'color': '🎨 Preservar Cores',
-                'zoom': 'Zoom do Texto:', 'wrap': 'Layout da Página:', 'out': 'Salvar em:',
-                'after': 'Após o processo:', 'start': 'INICIAR CONVERSÃO', 'cancel': 'Cancelar',
-                'pause': 'Pausar', 'resume': 'Retomar',
-                'ready': 'Pronto.', 'rem': 'Restante:', 'elapsed': 'Decorrido:', 'done': '✅ CONVERSÃO CONCLUÍDA!',
-                'cancelled': '❌ Cancelado.', 'paused': '⏸️ Pausado',
-                'warn': 'Selecione um PDF!', 'clear': 'Remover',
-                'ow_title': 'Arquivo existe', 'ow_msg': 'Sobrescrever?',
-                'preparing': 'Iniciando conversão, aguarde...',
-                'm_opts': ["6\" Padrão", "6.8\" Paperwhite 2021", "7\" Largo", "10.2\" Scribe", "Legacy"],
-                'z_opts': ["1.00 - Original", "1.15 - Médio", "1.30 - Alto (Rec.)", "1.45 - Máximo"],
-                'w_opts': ["Refluxo (Rápido)", "Preservar Layout (Rico)"],
-                'a_opts': ["Mostrar na pasta", "Abrir arquivo", "Não fazer nada"]
-            },
-            'de': {
-                'title': 'Kindleizer v1.0', 'name': '🇩🇪 Deutsch',
-                'drop': 'PDF hier ablegen', 'drop_btn': 'Durchsuchen',
-                'model': 'Kindle-Modell:', 'color': '🎨 Farben beibehalten',
-                'zoom': 'Textgröße:', 'wrap': 'Seitenlayout:', 'out': 'Speicherort:',
-                'after': 'Nach dem Vorgang:', 'start': 'KONVERTIERUNG STARTEN', 'cancel': 'Abbrechen',
-                'pause': 'Pause', 'resume': 'Fortsetzen',
-                'ready': 'Bereit.', 'rem': 'Verbleibend:', 'elapsed': 'Verstrichen:', 'done': '✅ KONVERTIERUNG ABGESCHLOSSEN!',
-                'cancelled': '❌ Abgebrochen.', 'paused': '⏸️ Pausiert',
-                'warn': 'Bitte ein PDF auswählen!', 'clear': 'Entfernen',
-                'ow_title': 'Datei existiert', 'ow_msg': 'Überschreiben?',
-                'preparing': 'Konvertierung wird gestartet, bitte warten...',
-                'm_opts': ["6\" Standard", "6.8\" Paperwhite 2021", "7\" Breit", "10.2\" Scribe", "Legacy"],
-                'z_opts': ["1.00 - Original", "1.15 - Mittel", "1.30 - Hoch (Empf.)", "1.45 - Maximal"],
-                'w_opts': ["Umlauf (Schnell)", "Layout beibehalten (Reich)"],
-                'a_opts': ["Im Ordner anzeigen", "Datei öffnen", "Nichts tun"]
-            },
-            'fr': {
-                'title': 'Kindleizer v1.0', 'name': '🇫🇷 Français',
-                'drop': 'Glissez-déposez le PDF ici', 'drop_btn': 'Parcourir',
-                'model': 'Modèle Kindle :', 'color': '🎨 Préserver les couleurs',
-                'zoom': 'Taille du texte :', 'wrap': 'Mise en page :', 'out': 'Emplacement :',
-                'after': 'Après le processus :', 'start': 'LANCER LA CONVERSION', 'cancel': 'Annuler',
-                'pause': 'Pause', 'resume': 'Reprendre',
-                'ready': 'Prêt.', 'rem': 'Restant :', 'elapsed': 'Écoulé :', 'done': '✅ CONVERSION TERMINÉE !',
-                'cancelled': '❌ Annulé.', 'paused': '⏸️ En pause',
-                'warn': 'Veuillez sélectionner un PDF !', 'clear': 'Retirer',
-                'ow_title': 'Le fichier existe', 'ow_msg': 'L\'écraser ?',
-                'preparing': 'Démarrage de la conversion, veuillez patienter...',
-                'm_opts': ["6\" Standard", "6.8\" Paperwhite 2021", "7\" Large", "10.2\" Scribe", "Legacy"],
-                'z_opts': ["1.00 - Original", "1.15 - Moyen", "1.30 - Haut (Rec.)", "1.45 - Maximum"],
-                'w_opts': ["Refusion (Rapide)", "Préserver la mise en page (Riche)"],
-                'a_opts': ["Afficher dans le dossier", "Ouvrir le fichier", "Ne rien faire"]
             }
         }
 
@@ -407,19 +332,15 @@ class KindleizerApp:
 
     def set_ui_state(self, enabled, converting=False):
         state = "normal" if enabled else "disabled"
-        
         for dropdown in [self.cihaz_box, self.zoom_box, self.wrap_box, self.after_box]:
             if dropdown.winfo_exists():
                 dropdown.set_enabled(enabled)
-        
         if self.color_switch.winfo_exists():
             self.color_switch.configure(state=state)
-        
         if hasattr(self, 'browse_btn') and self.browse_btn.winfo_exists():
             self.browse_btn.configure(state=state)
         if hasattr(self, 'clear_btn') and self.clear_btn.winfo_exists():
             self.clear_btn.configure(state=state)
-        
         try:
             if enabled:
                 self.drop_frame.drop_target_register(DND_FILES)
@@ -429,21 +350,16 @@ class KindleizerApp:
                 self.drop_frame.drop_target_unregister()
                 self.drop_frame.dnd_bind('<<Drop>>', None)
                 self.drop_frame.configure(cursor="arrow")
-        except Exception:
-            pass
-        
+        except: pass
         if hasattr(self, 'out_btn') and self.out_btn.winfo_exists():
             self.out_btn.configure(state=state)
-        
         self.btn_baslat.configure(state=state)
-        
         if converting:
             self.btn_cancel.pack(side="left", padx=(0, 5))
             self.btn_pause.pack(side="left")
         else:
             self.btn_cancel.pack_forget()
             self.btn_pause.pack_forget()
-        
         if self.btn_lang.winfo_exists():
             if enabled:
                 self.btn_lang.bind("<Button-1>", lambda e: self.toggle_drawer())
@@ -451,63 +367,45 @@ class KindleizerApp:
             else:
                 self.btn_lang.unbind("<Button-1>")
                 self.btn_lang.configure(cursor="arrow")
-        
         if not enabled and self.is_drawer_open:
             self.drawer.place_forget()
             self.is_drawer_open = False
-        
         self.root.update()
 
     def setup_ui(self):
         L = self.langs[self.current_lang]
-
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        self.logo_label = ctk.CTkLabel(self.root, text="kindle", font=("Helvetica", 22, "bold"),
-                                       text_color=LOGO_COLOR)
+        self.logo_label = ctk.CTkLabel(self.root, text="kindle", font=("Helvetica", 22, "bold"), text_color=LOGO_COLOR)
         self.logo_label.pack(side="bottom", pady=(0, 15))
 
         self.screen_frame = ctk.CTkFrame(self.root, fg_color=SCREEN_COLOR, corner_radius=2)
         self.screen_frame.pack(fill="both", expand=True, padx=25, pady=(8, 8))
-
         main_pad = 25
 
-        self.drop_frame = ctk.CTkFrame(self.screen_frame, fg_color=INPUT_BG,
-                                       border_color=DASHED_BORDER, border_width=2,
-                                       corner_radius=12)
+        self.drop_frame = ctk.CTkFrame(self.screen_frame, fg_color=INPUT_BG, border_color=DASHED_BORDER, border_width=2, corner_radius=12)
         self.drop_frame.pack(fill="x", padx=main_pad, pady=(20, 15), ipady=10)
         self.drop_frame.drop_target_register(DND_FILES)
         self.drop_frame.dnd_bind('<<Drop>>', self.handle_drop)
         self.drop_frame.configure(cursor="hand2")
 
-        self.drop_icon = ctk.CTkLabel(self.drop_frame, text="📄", font=(MAIN_FONT, 36),
-                                      text_color=INK_COLOR)
+        self.drop_icon = ctk.CTkLabel(self.drop_frame, text="📄", font=(MAIN_FONT, 36), text_color=INK_COLOR)
         self.drop_icon.pack(pady=(10, 0))
 
         status_text = os.path.basename(self.pdf_path) if self.pdf_path else L['drop']
-        self.lbl_drop = ctk.CTkLabel(self.drop_frame, text=status_text, font=(MAIN_FONT, 14, "bold"),
-                                     text_color=INK_COLOR if self.pdf_path else "#8A7B69")
+        self.lbl_drop = ctk.CTkLabel(self.drop_frame, text=status_text, font=(MAIN_FONT, 14, "bold"), text_color=INK_COLOR if self.pdf_path else "#8A7B69")
         self.lbl_drop.pack()
 
         btn_frame = ctk.CTkFrame(self.drop_frame, fg_color="transparent")
         btn_frame.pack(pady=(5, 10))
 
         if not self.pdf_path:
-            ctk.CTkLabel(btn_frame, text="veya", font=FONT_SMALL,
-                         text_color="#8A7B69").pack(side="left", padx=5)
-            self.browse_btn = ctk.CTkButton(btn_frame, text=L['drop_btn'], font=FONT_SMALL,
-                                            fg_color="transparent", text_color=INK_COLOR,
-                                            hover_color=HOVER_SEPIA_DARK,
-                                            border_width=1, border_color=BORDER_COLOR,
-                                            corner_radius=20, command=self.pdf_sec)
+            ctk.CTkLabel(btn_frame, text="veya", font=FONT_SMALL, text_color="#8A7B69").pack(side="left", padx=5)
+            self.browse_btn = ctk.CTkButton(btn_frame, text=L['drop_btn'], font=FONT_SMALL, fg_color="transparent", text_color=INK_COLOR, hover_color=HOVER_SEPIA_DARK, border_width=1, border_color=BORDER_COLOR, corner_radius=20, command=self.pdf_sec)
             self.browse_btn.pack(side="left", padx=5)
         else:
-            self.clear_btn = ctk.CTkButton(btn_frame, text=L['clear'], font=FONT_SMALL,
-                                           fg_color="transparent", text_color=CANCEL_RED,
-                                           hover_color="#F0E0D0", border_width=1,
-                                           border_color=CANCEL_RED, corner_radius=20,
-                                           command=self.clear_pdf)
+            self.clear_btn = ctk.CTkButton(btn_frame, text=L['clear'], font=FONT_SMALL, fg_color="transparent", text_color=CANCEL_RED, hover_color="#F0E0D0", border_width=1, border_color=CANCEL_RED, corner_radius=20, command=self.clear_pdf)
             self.clear_btn.pack(side="left", padx=5)
 
         opt_frame = ctk.CTkFrame(self.screen_frame, fg_color="transparent")
@@ -518,13 +416,9 @@ class KindleizerApp:
         self.cihaz_box.set(L['m_opts'][self.idx_model])
         self.cihaz_box.pack(fill="x", pady=(0, 8))
 
-        self.color_switch = ctk.CTkSwitch(opt_frame, text=L['color'], font=FONT_OPTION,
-                                          text_color=INK_COLOR, fg_color=BORDER_COLOR,
-                                          progress_color=INK_COLOR)
-        if self.val_color:
-            self.color_switch.select()
-        else:
-            self.color_switch.deselect()
+        self.color_switch = ctk.CTkSwitch(opt_frame, text=L['color'], font=FONT_OPTION, text_color=INK_COLOR, fg_color=BORDER_COLOR, progress_color=INK_COLOR)
+        if self.val_color: self.color_switch.select()
+        else: self.color_switch.deselect()
         self.color_switch.pack(anchor="w", pady=(0, 15))
 
         self.add_label(opt_frame, L['zoom'])
@@ -540,13 +434,9 @@ class KindleizerApp:
         self.add_label(opt_frame, L['out'])
         out_container = ctk.CTkFrame(opt_frame, fg_color="transparent")
         out_container.pack(fill="x", pady=(0, 15))
-        self.lbl_out = ctk.CTkLabel(out_container, text=os.path.basename(self.output_path) if self.output_path else "...",
-                                    font=FONT_OPTION, text_color=INK_COLOR)
+        self.lbl_out = ctk.CTkLabel(out_container, text=os.path.basename(self.output_path) if self.output_path else "...", font=FONT_OPTION, text_color=INK_COLOR)
         self.lbl_out.pack(side="left")
-        self.out_btn = ctk.CTkButton(out_container, text="📁", width=40, font=FONT_OPTION,
-                      fg_color=INPUT_BG, text_color=INK_COLOR,
-                      border_width=1, border_color=BORDER_COLOR, corner_radius=6,
-                      command=self.output_sec, hover_color=HOVER_SEPIA_DARK)
+        self.out_btn = ctk.CTkButton(out_container, text="📁", width=40, font=FONT_OPTION, fg_color=INPUT_BG, text_color=INK_COLOR, border_width=1, border_color=BORDER_COLOR, corner_radius=6, command=self.output_sec, hover_color=HOVER_SEPIA_DARK)
         self.out_btn.pack(side="right")
 
         self.add_label(opt_frame, L['after'])
@@ -557,34 +447,21 @@ class KindleizerApp:
         button_frame = ctk.CTkFrame(self.screen_frame, fg_color="transparent")
         button_frame.pack(fill="x", padx=main_pad, pady=(5, 5))
 
-        self.btn_baslat = ctk.CTkButton(button_frame, text=L['start'], fg_color=INK_COLOR,
-                                        hover_color=INK_HOVER, text_color=SCREEN_COLOR,
-                                        font=FONT_TITLE, height=50, corner_radius=10,
-                                        command=self.cevir_baslat)
+        self.btn_baslat = ctk.CTkButton(button_frame, text=L['start'], fg_color=INK_COLOR, hover_color=INK_HOVER, text_color=SCREEN_COLOR, font=FONT_TITLE, height=50, corner_radius=10, command=self.cevir_baslat)
         self.btn_baslat.pack(side="left", fill="x", expand=True)
 
-        self.btn_cancel = ctk.CTkButton(button_frame, text=L['cancel'], fg_color="transparent",
-                                        hover_color="#F0E0D0", text_color=CANCEL_RED,
-                                        font=FONT_OPTION, height=50, width=100, corner_radius=10,
-                                        border_width=1, border_color=CANCEL_RED,
-                                        command=self.cancel_conversion)
+        self.btn_cancel = ctk.CTkButton(button_frame, text=L['cancel'], fg_color="transparent", hover_color="#F0E0D0", text_color=CANCEL_RED, font=FONT_OPTION, height=50, width=100, corner_radius=10, border_width=1, border_color=CANCEL_RED, command=self.cancel_conversion)
+        self.btn_pause = ctk.CTkButton(button_frame, text=L['pause'], fg_color=PAUSE_COLOR, hover_color="#D4A017", text_color="#FFFFFF", font=FONT_OPTION, height=50, width=100, corner_radius=10, command=self.toggle_pause)
 
-        self.btn_pause = ctk.CTkButton(button_frame, text=L['pause'], fg_color=PAUSE_COLOR,
-                                       hover_color="#D4A017", text_color="#FFFFFF",
-                                       font=FONT_OPTION, height=50, width=100, corner_radius=10,
-                                       command=self.toggle_pause)
-
-        self.progress = ctk.CTkProgressBar(self.screen_frame, progress_color=PROGRESS_FILL,
-                                           fg_color=PROGRESS_BG, height=22, corner_radius=11)
+        self.progress = ctk.CTkProgressBar(self.screen_frame, progress_color=PROGRESS_FILL, fg_color=PROGRESS_BG, height=22, corner_radius=11)
         self.progress.pack(fill="x", padx=main_pad, pady=(10, 8))
         self.progress.set(0)
 
         self.bottom_frame = ctk.CTkFrame(self.screen_frame, fg_color="transparent")
         self.bottom_frame.pack(fill="x", padx=main_pad, pady=(0, 15))
 
-        self.lbl_status = ctk.CTkLabel(self.bottom_frame, text=L['ready'],
-                                       font=(MAIN_FONT, 14, "bold"), text_color=INK_COLOR)
-        self.lbl_status.pack(side="left", expand=True, padx=(40, 0)) 
+        self.lbl_status = ctk.CTkLabel(self.bottom_frame, text=L['ready'], font=(MAIN_FONT, 14, "bold"), text_color=INK_COLOR)
+        self.lbl_status.pack(side="left", expand=True, padx=(40, 0))
 
         self.setup_drawer()
 
@@ -592,41 +469,39 @@ class KindleizerApp:
         ctk.CTkLabel(parent, text=text, font=FONT_HEADER, text_color=INK_COLOR).pack(anchor="w", pady=(2, 1))
 
     def handle_drop(self, event):
-        if self.btn_baslat.cget("state") == "disabled":
-            return
+        if self.btn_baslat.cget("state") == "disabled": return
         self.capture_state()
-        path = event.data.strip('{}')
+        path = event.data.strip('{} ')
         self.pdf_path = path
-        self.output_path = os.path.join(os.path.dirname(path),
-                                        f"{os.path.splitext(os.path.basename(path))[0]}_kindleized.pdf")
+        dir_name = os.path.dirname(path)
+        base_name = os.path.basename(path).strip()
+        file_name, ext = os.path.splitext(base_name)
+        self.output_path = os.path.join(dir_name, f"{file_name}_kindleized.pdf")
         self.setup_ui()
 
     def pdf_sec(self):
-        if self.btn_baslat.cget("state") == "disabled":
-            return
+        if self.btn_baslat.cget("state") == "disabled": return
         path = filedialog.askopenfilename(filetypes=[("PDF", "*.pdf")])
         if path:
             self.capture_state()
             self.pdf_path = path
-            self.output_path = os.path.join(os.path.dirname(path),
-                                            f"{os.path.splitext(os.path.basename(path))[0]}_kindleized.pdf")
+            dir_name = os.path.dirname(path)
+            base_name = os.path.basename(path).strip()
+            file_name, ext = os.path.splitext(base_name)
+            self.output_path = os.path.join(dir_name, f"{file_name}_kindleized.pdf")
             self.setup_ui()
 
     def clear_pdf(self):
-        if self.btn_baslat.cget("state") == "disabled":
-            return
+        if self.btn_baslat.cget("state") == "disabled": return
         self.capture_state()
         self.pdf_path = ""
         self.output_path = ""
         self.setup_ui()
 
     def output_sec(self):
-        if self.btn_baslat.cget("state") == "disabled":
-            return
-        if not self.pdf_path:
-            return
-        path = filedialog.asksaveasfilename(defaultextension=".pdf",
-                                            initialfile=os.path.basename(self.output_path))
+        if self.btn_baslat.cget("state") == "disabled": return
+        if not self.pdf_path: return
+        path = filedialog.asksaveasfilename(defaultextension=".pdf", initialfile=os.path.basename(self.output_path))
         if path:
             self.output_path = path
             self.lbl_out.configure(text=os.path.basename(path))
@@ -634,6 +509,12 @@ class KindleizerApp:
     def toggle_pause(self):
         if not self.process or self.process.poll() is not None:
             return
+        
+        # YENİ: Windows işletim sisteminde duraklatma sinyalleri farklıdır
+        if self.os_name == "Windows":
+            messagebox.showinfo("Bilgi", "Duraklatma özelliği şu an sadece Mac sistemlerinde çalışmaktadır.")
+            return
+
         L = self.langs[self.current_lang]
         if self.is_paused:
             os.kill(self.process.pid, signal.SIGCONT)
@@ -649,7 +530,7 @@ class KindleizerApp:
     def cancel_conversion(self):
         if self.process and self.process.poll() is None:
             self.is_cancelled = True
-            if self.is_paused:
+            if self.is_paused and self.os_name != "Windows":
                 os.kill(self.process.pid, signal.SIGCONT) 
             self.process.terminate()
             L = self.langs[self.current_lang]
@@ -663,15 +544,14 @@ class KindleizerApp:
             return
 
         if not os.path.exists(self.k2_path):
-            messagebox.showerror("Hata", f"k2pdfopt bulunamadı:\n{self.k2_path}")
+            messagebox.showerror("Hata", f"k2pdfopt motoru bulunamadı:\n{self.k2_path}")
             return
 
         if os.path.exists(self.output_path):
             L = self.langs[self.current_lang]
             overwrite = messagebox.askyesno(L['ow_title'], L['ow_msg'])
             if not overwrite:
-                new_path = filedialog.asksaveasfilename(defaultextension=".pdf",
-                                                        initialfile=os.path.basename(self.output_path))
+                new_path = filedialog.asksaveasfilename(defaultextension=".pdf", initialfile=os.path.basename(self.output_path))
                 if new_path:
                     self.output_path = new_path
                     self.lbl_out.configure(text=os.path.basename(new_path))
@@ -686,35 +566,57 @@ class KindleizerApp:
         L = self.langs[self.current_lang]
         self.lbl_status.configure(text=L['preparing'])
         
-        try:
-            os.chmod(self.k2_path, 0o755)
-        except:
-            pass
+        # Sadece Mac'te yetkilendirme yapar
+        if self.os_name != "Windows":
+            try: os.chmod(self.k2_path, 0o755)
+            except: pass
+            
         threading.Thread(target=self.run_logic, daemon=True).start()
 
+    # YENİ: K2pdfopt akıllı motor mantığı geri eklendi (Eski f2p komutları silindi)
     def run_logic(self):
         L = self.langs[self.current_lang]
         current_model_idx = L['m_opts'].index(self.cihaz_box.get())
         m = self.model_specs[current_model_idx]
         mag = self.zoom_box.get().split(" ")[0]
         wrap_text = self.wrap_box.get()
-        wrap = ["-wrap-"] if ("Koru" in wrap_text or "Preserve" in wrap_text or "Mantieni" in wrap_text or 
-                              "Preservar" in wrap_text or "beibehalten" in wrap_text or "Préserver" in wrap_text) else []
+        
+        # Hangi Mod?
+        is_preserve = ("Koru" in wrap_text or "Preserve" in wrap_text or "Mantieni" in wrap_text or 
+                       "Preservar" in wrap_text or "beibehalten" in wrap_text or "Préserver" in wrap_text)
+        
         color_args = ["-c"] if self.color_switch.get() else []
         cores = str(max(1, (os.cpu_count() or 2) - 1))
 
-        cmd = [self.k2_path, self.pdf_path, "-nt", cores, "-x", "-w", m['w'], "-h", m['h'],
-               "-dpi", m['dpi'], "-f2p", "-1"] + color_args + wrap + ["-om", m['m'],
-               "-mag", mag, "-y", "-o", self.output_path]
+        # Ortak Argümanlar
+        cmd = [self.k2_path, self.pdf_path, "-nt", cores, "-x", "-w", m['w'], "-h", m['h'], "-dpi", m['dpi']]
+
+        # Akıllı Dal (Smart Branch)
+        if is_preserve:
+            # Akademik/Görselli kitaplar için
+            cmd.extend(["-bp", "-m", "0.05"]) 
+        else:
+            # Düz yazılar için
+            cmd.extend(["-as", "-bp", "-m", m['m']])
+
+        cmd.extend(color_args)
+        cmd.extend(["-mag", mag, "-y", "-o", self.output_path])
+
+        # Windows'a özel subprocess ayarları
+        kwargs = {}
+        if self.os_name != "Windows":
+            kwargs['preexec_fn'] = os.setsid
+        else:
+            # Windows'ta K2pdfopt konsolunun belirmemesi için (İsteğe bağlı)
+            kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0
 
         try:
             self.process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                            stderr=subprocess.STDOUT, text=True, preexec_fn=os.setsid)
+                                            stderr=subprocess.STDOUT, text=True, **kwargs)
             try:
                 self.process.stdin.write("\n")
                 self.process.stdin.flush()
-            except:
-                pass
+            except: pass
 
             start_time = time.time()
             for line in self.process.stdout:
@@ -728,12 +630,10 @@ class KindleizerApp:
                     kalan = ((total - curr) * (gecen / curr)) if curr > 0 else 0
                     g_dk, g_sn = divmod(int(gecen), 60)
                     k_dk, k_sn = divmod(int(kalan), 60)
-                    
                     msg = f"%{int(yuzde*100)} ({curr}/{total})   ⏳ {L['elapsed']} {g_dk}m {g_sn}s | {L['rem']} {k_dk}m {k_sn}s"
                     self.root.after(0, lambda m=msg, y=yuzde: self.update_progress(m, y))
             
             self.process.wait()
-            
             if not self.is_cancelled:
                 self.root.after(0, self.finish)
         except Exception as e:
@@ -747,8 +647,7 @@ class KindleizerApp:
         self.progress.set(y)
 
     def finish(self):
-        if self.is_cancelled:
-            return
+        if self.is_cancelled: return
         L = self.langs[self.current_lang]
         self.lbl_status.configure(text=L['done'])
         self.btn_baslat.configure(text=L['start'])
@@ -756,30 +655,29 @@ class KindleizerApp:
         self.progress.set(1.0)
         self.is_paused = False
         
+        # YENİ: Windows için klasör ve dosya açma komutları
         action = self.after_box.get()
-        if action == L['a_opts'][0]:
-            subprocess.run(["open", "-R", self.output_path])
-        elif action == L['a_opts'][1]:
-            subprocess.run(["open", self.output_path])
+        if action == L['a_opts'][0]: # Klasörde göster
+            if self.os_name == "Windows":
+                subprocess.run(["explorer", "/select,", os.path.normpath(self.output_path)])
+            else:
+                subprocess.run(["open", "-R", self.output_path])
+        elif action == L['a_opts'][1]: # Dosyayı aç
+            if self.os_name == "Windows":
+                os.startfile(self.output_path)
+            else:
+                subprocess.run(["open", self.output_path])
 
     def setup_drawer(self):
-        self.drawer = ctk.CTkFrame(self.screen_frame, fg_color=INPUT_BG,
-                                   border_color=BORDER_COLOR, border_width=1,
-                                   corner_radius=8)
+        self.drawer = ctk.CTkFrame(self.screen_frame, fg_color=INPUT_BG, border_color=BORDER_COLOR, border_width=1, corner_radius=8)
         for code, data in self.langs.items():
-            ctk.CTkButton(self.drawer, text=data['name'], font=FONT_OPTION,
-                          fg_color="transparent", text_color=INK_COLOR,
-                          hover_color=SCREEN_COLOR, height=35,
-                          command=lambda c=code: self.change_lang(c)).pack(fill="x", padx=5, pady=2)
-
-        self.btn_lang = ctk.CTkLabel(self.bottom_frame, text=f"🌐 {self.langs[self.current_lang]['name']}",
-                                     font=FONT_SMALL, cursor="hand2", text_color=INK_COLOR)
+            ctk.CTkButton(self.drawer, text=data['name'], font=FONT_OPTION, fg_color="transparent", text_color=INK_COLOR, hover_color=SCREEN_COLOR, height=35, command=lambda c=code: self.change_lang(c)).pack(fill="x", padx=5, pady=2)
+        self.btn_lang = ctk.CTkLabel(self.bottom_frame, text=f"🌐 {self.langs[self.current_lang]['name']}", font=FONT_SMALL, cursor="hand2", text_color=INK_COLOR)
         self.btn_lang.pack(side="right")
         self.btn_lang.bind("<Button-1>", lambda e: self.toggle_drawer())
 
     def toggle_drawer(self):
-        if self.btn_baslat.cget("state") == "disabled":
-            return
+        if self.btn_baslat.cget("state") == "disabled": return
         if not self.is_drawer_open:
             self.drawer.place(relx=0.96, rely=0.94, anchor="se")
             self.drawer.lift()
@@ -789,8 +687,7 @@ class KindleizerApp:
             self.is_drawer_open = False
 
     def change_lang(self, code):
-        if self.btn_baslat.cget("state") == "disabled":
-            return
+        if self.btn_baslat.cget("state") == "disabled": return
         self.capture_state()
         self.current_lang = code
         self.is_drawer_open = False
