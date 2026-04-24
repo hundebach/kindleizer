@@ -31,7 +31,7 @@ jobs:
 
     - name: Build APP with PyInstaller
       run: |
-        pyinstaller --noconfirm --onedir --windowed --add-data "k2pdfopt:." --name "Kindleizer" arayuz.py
+        pyinstaller --noconfirm --onedir --windowed --add-data "k2pdfopt:." --icon "icon.icns" --name "Kindleizer" arayuz.py
 
     - name: Install create-dmg
       run: brew install create-dmg
