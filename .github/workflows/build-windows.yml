@@ -1,4 +1,4 @@
-name: Build Kindleizer EXE
+name: Build Kindleizer Windows EXE
 
 on:
   push:

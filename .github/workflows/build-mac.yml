@@ -27,11 +27,9 @@ jobs:
         pip install customtkinter tkinterdnd2 pyinstaller
 
     - name: Make k2pdfopt Executable
-      # İndirdiğimiz Mac motoruna çalışma izni veriyoruz
       run: chmod +x k2pdfopt
 
     - name: Build APP with PyInstaller
-      # --name "Kindleizer" ile uygulamanın adını şıklaştırıyoruz
       run: |
         pyinstaller --noconfirm --onedir --windowed --add-data "k2pdfopt:." --name "Kindleizer" arayuz.py
 
@@ -39,7 +37,6 @@ jobs:
       run: brew install create-dmg
 
     - name: Create DMG with Background
-      # Arka plan resmini ve ikonların yerlerini ayarlıyoruz
       run: |
         create-dmg \
           --volname "Kindleizer" \
