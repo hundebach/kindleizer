@@ -308,6 +308,13 @@ class KindleizerApp:
         final_w = max(req_w, min_w)
         final_h = max(req_h, min_h)
         self.root.geometry(f"{final_w}x{final_h}")
+        self.root.bind("<FocusIn>", self.on_focus_regained)
+
+def on_focus_regained(self, event):
+        # Uygulama aktifleştiğinde arayüzü zorla günceller ve tıklama donmasını çözer
+        self.root.update_idletasks()
+        if self.os_name == "Darwin": # Eğer sistem Mac ise
+            self.root.lift()
 
     def capture_state(self):
         if hasattr(self, 'zoom_box') and self.zoom_box.winfo_exists():
@@ -594,7 +601,8 @@ class KindleizerApp:
         # Akıllı Dal (Smart Branch)
         if is_preserve:
             # Akademik/Görselli kitaplar için
-            cmd.extend(["-bp", "-m", "0.05"]) 
+            # YENİ EKLENENLER: -wrap- (Reflow'u kapatır) ve -ws -1 (Kelime boşluklarını bozmaz)
+            cmd.extend(["-wrap-", "-ws", "-1", "-bp", "-m", "0.05"]) 
         else:
             # Düz yazılar için
             cmd.extend(["-as", "-bp", "-m", m['m']])
