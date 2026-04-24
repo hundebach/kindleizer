@@ -308,13 +308,23 @@ class KindleizerApp:
         final_w = max(req_w, min_w)
         final_h = max(req_h, min_h)
         self.root.geometry(f"{final_w}x{final_h}")
-        self.root.bind("<FocusIn>", self.on_focus_regained)
+        
+        # Mac için özel odaklanma (tıklama) düzeltmesi
+        if self.os_name == "Darwin":
+            # Herhangi bir tıklamada odağı zorla içeri çeker
+            self.root.bind("<Button-1>", lambda e: self.root.focus_force(), add="+")
+            # Uygulama öne geldiğinde tam bir yenileme yapar
+            self.root.bind("<FocusIn>", self.on_focus_regained, add="+")
 
     def on_focus_regained(self, event):
-        # Uygulama aktifleştiğinde arayüzü zorla günceller ve tıklama donmasını çözer
-        self.root.update_idletasks()
-        if self.os_name == "Darwin": # Eğer sistem Mac ise
-            self.root.lift()
+        if self.os_name == "Darwin":
+            # Odağı zorla pencereye al
+            self.root.focus_force()
+            # Arayüzün donmasını engellemek için olay döngüsünü tazele
+            self.root.update_idletasks()
+            # Pencereyi 1 milisaniyeliğine en üste çekip bırak (Mac'i kandırma hilesi)
+            self.root.attributes("-topmost", True)
+            self.root.attributes("-topmost", False)
 
     def capture_state(self):
         if hasattr(self, 'zoom_box') and self.zoom_box.winfo_exists():
