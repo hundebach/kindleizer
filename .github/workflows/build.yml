@@ -5,6 +5,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# O sinir bozucu uyarıyı susturan komut
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-windows:
     runs-on: windows-latest
