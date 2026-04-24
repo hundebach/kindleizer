@@ -26,7 +26,7 @@ PROGRESS_BG = "#D4C4A9"
 PROGRESS_FILL = "#30281F"
 PAUSE_COLOR = "#E6A817"
 
-MAIN_FONT = "Georgia"
+MAIN_FONT = "Helvetica"
 FONT_TITLE = (MAIN_FONT, 22, "bold")
 FONT_HEADER = (MAIN_FONT, 18, "bold")
 FONT_OPTION = (MAIN_FONT, 16)
@@ -390,7 +390,7 @@ class KindleizerApp:
         self.drop_frame.dnd_bind('<<Drop>>', self.handle_drop)
         self.drop_frame.configure(cursor="hand2")
 
-        self.drop_icon = ctk.CTkLabel(self.drop_frame, text="📄", font=(MAIN_FONT, 36), text_color=INK_COLOR)
+        self.drop_icon = ctk.CTkLabel(self.drop_frame, text="PDF", font=(MAIN_FONT, 36), text_color=INK_COLOR)
         self.drop_icon.pack(pady=(10, 0))
 
         status_text = os.path.basename(self.pdf_path) if self.pdf_path else L['drop']
@@ -436,7 +436,7 @@ class KindleizerApp:
         out_container.pack(fill="x", pady=(0, 15))
         self.lbl_out = ctk.CTkLabel(out_container, text=os.path.basename(self.output_path) if self.output_path else "...", font=FONT_OPTION, text_color=INK_COLOR)
         self.lbl_out.pack(side="left")
-        self.out_btn = ctk.CTkButton(out_container, text="📁", width=40, font=FONT_OPTION, fg_color=INPUT_BG, text_color=INK_COLOR, border_width=1, border_color=BORDER_COLOR, corner_radius=6, command=self.output_sec, hover_color=HOVER_SEPIA_DARK)
+        self.out_btn = ctk.CTkButton(out_container, text="...", width=40, font=FONT_OPTION, fg_color=INPUT_BG, text_color=INK_COLOR, border_width=1, border_color=BORDER_COLOR, corner_radius=6, command=self.output_sec, hover_color=HOVER_SEPIA_DARK)
         self.out_btn.pack(side="right")
 
         self.add_label(opt_frame, L['after'])
@@ -561,7 +561,7 @@ class KindleizerApp:
         self.is_cancelled = False
         self.is_paused = False
         self.set_ui_state(False, converting=True)
-        self.btn_baslat.configure(text="⏳ ...")
+        self.btn_baslat.configure(text="...")
         self.progress.set(0)
         L = self.langs[self.current_lang]
         self.lbl_status.configure(text=L['preparing'])
@@ -630,7 +630,7 @@ class KindleizerApp:
                     kalan = ((total - curr) * (gecen / curr)) if curr > 0 else 0
                     g_dk, g_sn = divmod(int(gecen), 60)
                     k_dk, k_sn = divmod(int(kalan), 60)
-                    msg = f"%{int(yuzde*100)} ({curr}/{total})   ⏳ {L['elapsed']} {g_dk}m {g_sn}s | {L['rem']} {k_dk}m {k_sn}s"
+                    msg = f"%{int(yuzde*100)} ({curr}/{total})   {L['elapsed']} {g_dk}m {g_sn}s | {L['rem']} {k_dk}m {k_sn}s"
                     self.root.after(0, lambda m=msg, y=yuzde: self.update_progress(m, y))
             
             self.process.wait()
