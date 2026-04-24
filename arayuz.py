@@ -7,17 +7,16 @@ import re
 import time
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QLabel, QPushButton, QComboBox, 
-                             QFileDialog, QProgressBar, QFrame, QGraphicsDropShadowEffect)
-from PyQt6.QtCore import Qt, QSize, pyqtSignal, QObject
+                             QFileDialog, QProgressBar, QFrame, QMessageBox, QCheckBox)
+from PyQt6.QtCore import Qt, QSize, pyqtSignal, QObject, QTimer
 from PyQt6.QtGui import QFont, QColor, QIcon, QCursor
 
 # --- TASARIM SABİTLERİ ---
-COLOR_BG = "#FBF0D9"  # Kindle ekran rengi
-COLOR_PRIMARY = "#30281F"  # Koyu mürekkep
-COLOR_SECONDARY = "#F2E3C6"  # Açık bej giriş alanları
+COLOR_BG = "#FBF0D9"  # Kindle Arka Plan
+COLOR_PRIMARY = "#30281F"  # Kahverengi Mürekkep
+COLOR_SECONDARY = "#F2E3C6"  # Giriş Alanları
 COLOR_ACCENT = "#D4C4A9"  # Kenarlıklar
-COLOR_TEXT = "#30281F"
-COLOR_WHITE = "#FFFFFF"
+COLOR_TEXT_DIM = "#8A7B69" # Yardımcı Metin
 
 class WorkerSignals(QObject):
     progress = pyqtSignal(str, float)
@@ -30,10 +29,9 @@ class KindleizerApp(QMainWindow):
         self.os_name = platform.system()
         self.pdf_path = ""
         self.output_path = ""
-        self.process = None
-        self.is_cancelled = False
+        self.start_time = 0
         
-        # Dosya yolları
+        # Dosya yolları ayarı
         if getattr(sys, 'frozen', False):
             self.base_path = sys._MEIPASS if hasattr(sys, '_MEIPASS') else os.path.dirname(sys.executable)
         else:
@@ -45,86 +43,114 @@ class KindleizerApp(QMainWindow):
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle("Kindleizer v1.1")
-        self.setFixedSize(600, 800)
+        self.setWindowTitle("Kindleizer v1.2")
+        self.setFixedSize(600, 850)
         self.setStyleSheet(f"background-color: {COLOR_BG};")
 
-        # Ana Widget ve Layout
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
-        layout.setContentsMargins(40, 40, 40, 40)
-        layout.setSpacing(20)
+        layout.setContentsMargins(35, 30, 35, 30)
+        layout.setSpacing(15)
 
-        # Başlık
-        title = QLabel("Kindleizer")
-        title.setFont(QFont("Georgia", 32, QFont.Weight.Bold))
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet(f"color: {COLOR_PRIMARY}; margin-bottom: 10px;")
-        layout.addWidget(title)
+        # 1. BAŞLIK BÖLÜMÜ
+        header_layout = QHBoxLayout()
+        title = QLabel("KINDLEIZER")
+        title.setFont(QFont("Georgia", 28, QFont.Weight.Bold))
+        title.setStyleSheet(f"color: {COLOR_PRIMARY}; letter-spacing: 2px;")
+        header_layout.addWidget(title, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addLayout(header_layout)
 
-        # Drop Alanı (Görsel olarak buton şeklinde)
-        self.drop_label = QLabel("Drag & Drop PDF Here\nor Click to Browse")
-        self.drop_label.setFixedSize(520, 150)
-        self.drop_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.drop_label.setFont(QFont("Helvetica", 14))
-        self.drop_label.setAcceptDrops(True)
-        self.drop_label.setStyleSheet(f"""
-            QLabel {{
+        # 2. DOSYA SEÇİM ALANI (Sürükle-Bırak)
+        self.drop_frame = QFrame()
+        self.drop_frame.setFixedSize(530, 140)
+        self.drop_frame.setAcceptDrops(True)
+        self.drop_frame.setStyleSheet(f"""
+            QFrame {{
                 border: 2px dashed {COLOR_ACCENT};
-                border-radius: 15px;
+                border-radius: 12px;
                 background-color: {COLOR_SECONDARY};
-                color: #8A7B69;
-            }}
-            QLabel:hover {{
-                background-color: #EBD9B4;
             }}
         """)
-        self.drop_label.mousePressEvent = lambda e: self.select_pdf()
-        layout.addWidget(self.drop_label)
+        drop_layout = QVBoxLayout(self.drop_frame)
+        self.lbl_drop_title = QLabel("📄 Drag & Drop PDF Here")
+        self.lbl_drop_title.setFont(QFont("Helvetica", 13, QFont.Weight.Bold))
+        self.lbl_drop_title.setStyleSheet(f"color: {COLOR_PRIMARY}; border: none;")
+        self.lbl_drop_subtitle = QLabel("or click to browse")
+        self.lbl_drop_subtitle.setStyleSheet(f"color: {COLOR_TEXT_DIM}; border: none;")
+        drop_layout.addWidget(self.lbl_drop_title, alignment=Qt.AlignmentFlag.AlignCenter)
+        drop_layout.addWidget(self.lbl_drop_subtitle, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.drop_frame.mousePressEvent = lambda e: self.select_pdf()
+        layout.addWidget(self.drop_frame)
 
-        # Seçenekler Paneli
-        form_layout = QVBoxLayout()
-        form_layout.setSpacing(10)
+        # 3. KAYIT KONUMU BÖLÜMÜ
+        save_layout = QVBoxLayout()
+        lbl_save = QLabel("📁 SAVE LOCATION")
+        lbl_save.setFont(QFont("Helvetica", 10, QFont.Weight.Bold))
+        lbl_save.setStyleSheet(f"color: {COLOR_PRIMARY};")
+        save_layout.addWidget(lbl_save)
+        
+        save_input_row = QHBoxLayout()
+        self.save_path_edit = QLabel("No folder selected...")
+        self.save_path_edit.setFixedHeight(40)
+        self.save_path_edit.setStyleSheet(f"background-color: {COLOR_SECONDARY}; border: 1px solid {COLOR_ACCENT}; border-radius: 6px; padding-left: 10px; color: {COLOR_PRIMARY};")
+        
+        btn_browse_save = QPushButton("...")
+        btn_browse_save.setFixedSize(40, 40)
+        btn_browse_save.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        btn_browse_save.setStyleSheet(f"background-color: {COLOR_ACCENT}; color: {COLOR_PRIMARY}; border-radius: 6px; font-weight: bold;")
+        btn_browse_save.clicked.connect(self.select_output_path)
+        
+        save_input_row.addWidget(self.save_path_edit)
+        save_input_row.addWidget(btn_browse_save)
+        save_layout.addLayout(save_input_row)
+        layout.addLayout(save_layout)
 
-        self.model_combo = self.create_styled_combo(["6\" Standard", "6.8\" Paperwhite", "7\" Oasis/Colorsoft", "10.2\" Scribe"], "Kindle Model")
-        form_layout.addLayout(self.model_combo)
+        # 4. AYARLAR PANELİ
+        settings_frame = QFrame()
+        settings_frame.setStyleSheet(f"background-color: {COLOR_SECONDARY}; border-radius: 10px; padding: 10px;")
+        settings_layout = QVBoxLayout(settings_frame)
+        
+        self.ui_model = self.add_setting(settings_layout, "Kindle Model:", ["6\" Standard", "6.8\" Paperwhite", "7\" Oasis/Colorsoft", "10.2\" Scribe"])
+        self.ui_zoom = self.add_setting(settings_layout, "Text Zoom:", ["1.00 - Small", "1.15 - Medium", "1.30 - High (Rec.)", "1.45 - Max"])
+        self.ui_layout = self.add_setting(settings_layout, "Page Layout:", ["Reflow (Text Only)", "Preserve Layout (Academic)"])
+        
+        layout.addWidget(settings_frame)
 
-        self.zoom_combo = self.create_styled_combo(["1.00 - Small", "1.15 - Medium", "1.30 - High (Rec.)", "1.45 - Max"], "Text Zoom")
-        form_layout.addLayout(self.zoom_combo)
+        # 5. OPSİYONLAR (Checkbox)
+        self.cb_open_file = QCheckBox("Open file when finished")
+        self.cb_open_file.setStyleSheet(f"color: {COLOR_PRIMARY}; font-weight: bold;")
+        layout.addWidget(self.cb_open_file)
 
-        self.layout_combo = self.create_styled_combo(["Reflow (Text Only)", "Preserve Layout (Academic)"], "Page Layout")
-        form_layout.addLayout(self.layout_combo)
-
-        layout.addLayout(form_layout)
-
-        # Progress Bar
+        # 6. PROGRESS VE DURUM
         self.progress = QProgressBar()
         self.progress.setStyleSheet(f"""
             QProgressBar {{
                 border: 1px solid {COLOR_ACCENT};
-                border-radius: 10px;
+                border-radius: 8px;
                 text-align: center;
-                height: 20px;
+                height: 15px;
                 background-color: {COLOR_SECONDARY};
+                color: {COLOR_PRIMARY};
+                font-weight: bold;
             }}
             QProgressBar::chunk {{
                 background-color: {COLOR_PRIMARY};
-                border-radius: 10px;
+                border-radius: 8px;
             }}
         """)
-        self.progress.setValue(0)
         layout.addWidget(self.progress)
 
-        self.status_lbl = QLabel("Ready.")
-        self.status_lbl.setFont(QFont("Helvetica", 12))
+        self.status_lbl = QLabel("Ready to start.")
+        self.status_lbl.setFont(QFont("Helvetica", 11))
+        self.status_lbl.setStyleSheet(f"color: {COLOR_PRIMARY};")
         self.status_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.status_lbl)
 
-        # Başlat Butonu
+        # 7. BAŞLAT BUTONU
         self.btn_start = QPushButton("START CONVERSION")
-        self.btn_start.setFixedHeight(60)
-        self.btn_start.setFont(QFont("Helvetica", 16, QFont.Weight.Bold))
+        self.btn_start.setFixedHeight(65)
+        self.btn_start.setFont(QFont("Helvetica", 15, QFont.Weight.Bold))
         self.btn_start.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.btn_start.setStyleSheet(f"""
             QPushButton {{
@@ -132,117 +158,92 @@ class KindleizerApp(QMainWindow):
                 color: {COLOR_BG};
                 border-radius: 12px;
             }}
-            QPushButton:hover {{
-                background-color: #1A1510;
-            }}
-            QPushButton:disabled {{
-                background-color: #A0A0A0;
-            }}
+            QPushButton:hover {{ background-color: #1A1510; }}
+            QPushButton:disabled {{ background-color: #A0A0A0; }}
         """)
-        self.btn_start.clicked.connect(self.start_conversion)
+        self.btn_start.clicked.connect(self.start_process)
         layout.addWidget(self.btn_start)
 
-    def create_styled_combo(self, items, label_text):
-        container = QVBoxLayout()
-        lbl = QLabel(label_text)
-        lbl.setFont(QFont("Helvetica", 12, QFont.Weight.Bold))
-        lbl.setStyleSheet(f"color: {COLOR_PRIMARY};")
-        
+    def add_setting(self, parent_layout, label, items):
+        row = QHBoxLayout()
+        lbl = QLabel(label)
+        lbl.setStyleSheet(f"color: {COLOR_PRIMARY}; font-weight: bold; border: none;")
         combo = QComboBox()
         combo.addItems(items)
-        combo.setFixedHeight(45)
-        combo.setStyleSheet(f"""
-            QComboBox {{
-                background-color: {COLOR_SECONDARY};
-                border: 1px solid {COLOR_ACCENT};
-                border-radius: 8px;
-                padding-left: 10px;
-                font-size: 14px;
-            }}
-            QComboBox::drop-down {{
-                border: 0px;
-            }}
-        """)
-        container.addWidget(lbl)
-        container.addWidget(combo)
-        
-        # Combo objesine doğrudan erişim için bir özellik ekleyelim
-        if "Model" in label_text: self.ui_model = combo
-        elif "Zoom" in label_text: self.ui_zoom = combo
-        elif "Layout" in label_text: self.ui_layout = combo
-        
-        return container
-
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls():
-            event.accept()
-        else:
-            event.ignore()
-
-    def dropEvent(self, event):
-        files = [u.toLocalFile() for u in event.mimeData().urls()]
-        if files:
-            self.set_pdf(files[0])
+        combo.setFixedWidth(220)
+        combo.setStyleSheet(f"background-color: {COLOR_BG}; border: 1px solid {COLOR_ACCENT}; border-radius: 4px; padding: 5px; color: {COLOR_PRIMARY};")
+        row.addWidget(lbl)
+        row.addWidget(combo)
+        parent_layout.addLayout(row)
+        return combo
 
     def select_pdf(self):
-        file, _ = QFileDialog.getOpenFileName(self, "Select PDF", "", "PDF Files (*.pdf)")
+        file, _ = QFileDialog.getOpenFileName(self, "Select PDF File", "", "PDF Files (*.pdf)")
         if file:
-            self.set_pdf(file)
+            self.set_pdf_path(file)
 
-    def set_pdf(self, path):
+    def select_output_path(self):
+        if not self.pdf_path: return
+        file, _ = QFileDialog.getSaveFileName(self, "Save Optimized PDF As", self.output_path, "PDF Files (*.pdf)")
+        if file:
+            self.output_path = file
+            self.save_path_edit.setText(os.path.basename(file))
+
+    def set_pdf_path(self, path):
         self.pdf_path = path
-        self.drop_label.setText(f"Selected: {os.path.basename(path)}")
-        self.drop_label.setStyleSheet(f"border: 2px solid {COLOR_PRIMARY}; border-radius: 15px; background-color: {COLOR_SECONDARY}; color: {COLOR_PRIMARY};")
-        
+        self.lbl_drop_title.setText(os.path.basename(path))
         dir_name = os.path.dirname(path)
         base_name = os.path.splitext(os.path.basename(path))[0]
         self.output_path = os.path.join(dir_name, f"{base_name}_kindleized.pdf")
+        self.save_path_edit.setText(os.path.basename(self.output_path))
 
-    def start_conversion(self):
+    def start_process(self):
         if not self.pdf_path:
-            self.status_lbl.setText("Please select a PDF first!")
+            QMessageBox.warning(self, "Error", "Please select a PDF file first!")
             return
 
-        self.btn_start.setEnabled(False)
-        self.status_lbl.setText("Processing...")
-        
-        # Thread başlatma
-        self.signals = WorkerSignals()
-        self.signals.progress.connect(self.update_ui_progress)
-        self.signals.finished.connect(self.conversion_finished)
-        
-        threading.Thread(target=self.run_logic, daemon=True).start()
+        # Overwrite koruması
+        if os.path.exists(self.output_path):
+            reply = QMessageBox.question(self, "File Exists", f"The file already exists:\n{os.path.basename(self.output_path)}\n\nDo you want to overwrite it?", 
+                                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            if reply == QMessageBox.StandardButton.No:
+                return
 
-    def update_ui_progress(self, msg, val):
-        self.status_lbl.setText(msg)
+        self.btn_start.setEnabled(False)
+        self.start_time = time.time()
+        
+        self.signals = WorkerSignals()
+        self.signals.progress.connect(self.update_progress)
+        self.signals.finished.connect(self.on_finished)
+        
+        threading.Thread(target=self.run_conversion_logic, daemon=True).start()
+
+    def update_progress(self, msg, val):
+        elapsed = int(time.time() - self.start_time)
+        mins, secs = divmod(elapsed, 60)
+        time_str = f"[{mins:02d}:{secs:02d}]"
+        self.status_lbl.setText(f"{time_str} {msg}")
         self.progress.setValue(int(val * 100))
 
-    def conversion_finished(self):
+    def on_finished(self):
         self.btn_start.setEnabled(True)
-        self.status_lbl.setText("Conversion Complete!")
         self.progress.setValue(100)
+        self.status_lbl.setText("Finished!")
+        
+        if self.cb_open_file.isChecked():
+            if self.os_name == "Windows": os.startfile(self.output_path)
+            else: subprocess.run(["open", self.output_path])
 
-    def run_logic(self):
-        # Ayarların okunması
-        model_idx = self.ui_model.currentIndex()
-        models = [
-            ["1072", "1448", "300"], # Standard
-            ["1236", "1648", "300"], # PW 2021
-            ["1264", "1680", "300"], # Oasis
-            ["1860", "2480", "300"]  # Scribe
-        ]
-        m = models[model_idx]
+    def run_conversion_logic(self):
+        # Ayarlar
+        models = [["1072", "1448", "300"], ["1236", "1648", "300"], ["1264", "1680", "300"], ["1860", "2480", "300"]]
+        m = models[self.ui_model.currentIndex()]
         zoom = self.ui_zoom.currentText().split(" ")[0]
         is_preserve = "Preserve" in self.ui_layout.currentText()
 
-        # Komut Hazırlama
         cmd = [self.k2_path, self.pdf_path, "-x", "-w", m[0], "-h", m[1], "-dpi", m[2]]
-        
-        if is_preserve:
-            cmd.extend(["-wrap-", "-ws", "-1", "-bp"]) # Düzeni koru
-        else:
-            cmd.extend(["-as", "-bp"]) # Reflow
-            
+        if is_preserve: cmd.extend(["-wrap-", "-ws", "-1", "-bp"])
+        else: cmd.extend(["-as", "-bp"])
         cmd.extend(["-mag", zoom, "-y", "-o", self.output_path])
 
         try:
@@ -251,17 +252,13 @@ class KindleizerApp(QMainWindow):
                 startupinfo = subprocess.STARTUPINFO()
                 startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
-            self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, 
-                                            text=True, startupinfo=startupinfo)
-            
-            for line in self.process.stdout:
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, startupinfo=startupinfo)
+            for line in process.stdout:
                 match = re.search(r"PAGE\s+(\d+)\s+of\s+(\d+)", line)
                 if match:
                     curr, total = int(match.group(1)), int(match.group(2))
-                    msg = f"Processing Page {curr} / {total}"
-                    self.signals.progress.emit(msg, curr/total)
-            
-            self.process.wait()
+                    self.signals.progress.emit(f"Processing Page {curr}/{total}", curr/total)
+            process.wait()
             self.signals.finished.emit()
         except Exception as e:
             self.signals.progress.emit(f"Error: {str(e)}", 0)
@@ -269,7 +266,8 @@ class KindleizerApp(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon("icon.png")) # Varsa ikon
+    # İkon varsa yükle (icon.png dosyanın adıyla eşleşmeli)
+    app.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__), "icon.png")))
     window = KindleizerApp()
     window.show()
     sys.exit(app.exec())
