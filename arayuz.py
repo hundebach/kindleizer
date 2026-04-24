@@ -1,3 +1,6 @@
+import os
+os.environ["QT_QUICK_BACKEND"] = "software"
+os.environ["QT_OPENGL"] = "software"
 import sys
 import os
 import subprocess

@@ -28,10 +28,14 @@ jobs:
         
     - name: Build EXE
       run: |
-        pyinstaller --noconfirm --onefile --windowed --collect-all PyQt6 --add-data "k2pdfopt.exe;." --icon "icon.ico" --name "Kindleizer" arayuz.py
+        pyinstaller --noconfirm --onedir --windowed --collect-all PyQt6 --add-data "k2pdfopt.exe;." --icon "icon.ico" --name "Kindleizer" arayuz.py
+
+    - name: Zip Folder
+      run: |
+        powershell Compress-Archive -Path dist/Kindleizer/* -DestinationPath dist/Kindleizer-Windows.zip
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Kindleizer-Windows-EXE
-        path: dist/Kindleizer.exe
+        name: Kindleizer-Windows-ZIP
+        path: dist/Kindleizer-Windows.zip
