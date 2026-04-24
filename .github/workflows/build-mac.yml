@@ -1,4 +1,4 @@
-name: Build Kindleizer Mac DMG
+name: Build Kindleizer Mac DMG (PyQt6)
 
 on:
   push:
@@ -24,19 +24,19 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install customtkinter tkinterdnd2 pyinstaller
+        pip install PyQt6 pyinstaller
 
     - name: Make k2pdfopt Executable
       run: chmod +x k2pdfopt
 
-    - name: Build APP with PyInstaller
+    - name: Build APP
       run: |
         pyinstaller --noconfirm --onedir --windowed --add-data "k2pdfopt:." --icon "icon.icns" --name "Kindleizer" arayuz.py
 
     - name: Install create-dmg
       run: brew install create-dmg
 
-    - name: Create DMG with Background
+    - name: Create DMG
       run: |
         create-dmg \
           --volname "Kindleizer" \
